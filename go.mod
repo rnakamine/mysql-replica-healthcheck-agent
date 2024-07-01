@@ -1,4 +1,4 @@
-module fujiwara/mysql-slave-healthcheck-agent
+module github.com/fujiwara/mysql-slave-healthcheck-agent
 
 go 1.22.4
 
