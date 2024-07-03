@@ -17,46 +17,46 @@ func TestInnerHandler(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name: "slave status available with no errors",
+			name: "replica status available with no errors",
 			config: ReplicaConfig{
-				FailSlaveNotRunning:    false,
-				MaxSecondsBehindMaster: 10,
+				FailReplicaNotRunning:  false,
+				MaxSecondsBehindSource: 10,
 			},
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"Seconds_Behind_Master"}).
+				rows := sqlmock.NewRows([]string{"Seconds_Behind_Source"}).
 					AddRow("0")
-				mock.ExpectQuery(regexp.QuoteMeta("SHOW SLAVE STATUS")).
+				mock.ExpectQuery(regexp.QuoteMeta("SHOW REPLICA STATUS")).
 					WillReturnRows(rows)
 			},
 			want: map[string]interface{}{
-				"Seconds_Behind_Master": int64(0),
+				"Seconds_Behind_Source": int64(0),
 			},
 			wantErr: false,
 		},
 		{
-			name: "slave is not running with no slave status",
+			name: "replica is not running with no replica status",
 			config: ReplicaConfig{
-				FailSlaveNotRunning:    true,
-				MaxSecondsBehindMaster: 10,
+				FailReplicaNotRunning:  true,
+				MaxSecondsBehindSource: 10,
 			},
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"Seconds_Behind_Master"})
-				mock.ExpectQuery(regexp.QuoteMeta("SHOW SLAVE STATUS")).
+				rows := sqlmock.NewRows([]string{"Seconds_Behind_Source"})
+				mock.ExpectQuery(regexp.QuoteMeta("SHOW REPLICA STATUS")).
 					WillReturnRows(rows)
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		{
-			name: "slave is up and running with replication lag too high",
+			name: "replica is up and running with replication lag too high",
 			config: ReplicaConfig{
-				FailSlaveNotRunning:    true,
-				MaxSecondsBehindMaster: 10,
+				FailReplicaNotRunning:  true,
+				MaxSecondsBehindSource: 10,
 			},
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"Seconds_Behind_Master"}).
+				rows := sqlmock.NewRows([]string{"Seconds_Behind_Source"}).
 					AddRow("30")
-				mock.ExpectQuery(regexp.QuoteMeta("SHOW SLAVE STATUS")).
+				mock.ExpectQuery(regexp.QuoteMeta("SHOW REPLICA STATUS")).
 					WillReturnRows(rows)
 			},
 			want:    nil,

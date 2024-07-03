@@ -4,11 +4,11 @@ replica1:
   port: 3307
   user: root
   password: rootpassword
-  max-seconds-behind-master: 300
+  max-seconds-behind-source: 300
 
 replica2:
   host: 127.0.0.1
-  port: 3307
+  port: 3308
   user: root
   password: rootpassword
-  max-seconds-behind-master: 300
+  max-seconds-behind-soruce: 300

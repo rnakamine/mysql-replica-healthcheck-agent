@@ -77,7 +77,7 @@ func handlerFunc(config *ReplicaConfig) http.HandlerFunc {
 }
 
 func innerHandler(config *ReplicaConfig, db *sql.DB) (map[string]interface{}, error) {
-	rows, err := db.Query("SHOW SLAVE STATUS")
+	rows, err := db.Query("SHOW REPLICA STATUS")
 	if err != nil {
 		return nil, err
 	}
@@ -114,13 +114,13 @@ func innerHandler(config *ReplicaConfig, db *sql.DB) (map[string]interface{}, er
 		}
 	}
 
-	secondsBehindMaster, ok := slaveInfo["Seconds_Behind_Master"].(int64)
-	if config.FailSlaveNotRunning && !ok {
+	secondsBehindSource, ok := slaveInfo["Seconds_Behind_Source"].(int64)
+	if config.FailReplicaNotRunning && !ok {
 		return nil, errors.New("slave is not running")
 	}
 
-	if ok && config.MaxSecondsBehindMaster > 0 {
-		if secondsBehindMaster > int64(config.MaxSecondsBehindMaster) {
+	if ok && config.MaxSecondsBehindSource > 0 {
+		if secondsBehindSource > int64(config.MaxSecondsBehindSource) {
 			return nil, errors.New("replication lag is too high")
 		}
 	}

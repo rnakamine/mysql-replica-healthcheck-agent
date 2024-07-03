@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type ReplicaConfig struct {
@@ -11,8 +11,8 @@ type ReplicaConfig struct {
 	Port                   int    `yaml:"port"`
 	User                   string `yaml:"user"`
 	Password               string `yaml:"password"`
-	MaxSecondsBehindMaster int    `yaml:"max-seconds-behind-master"`
-	FailSlaveNotRunning    bool   `yaml:"fail-slave-not-running"`
+	MaxSecondsBehindSource int    `yaml:"max-seconds-behind-source"`
+	FailReplicaNotRunning  bool   `yaml:"fail-slave-not-running"`
 }
 
 type Configs map[string]ReplicaConfig
