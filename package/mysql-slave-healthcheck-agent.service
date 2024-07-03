@@ -3,7 +3,7 @@ Description=MySQL slave healthcheck agent
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/mysql-slave-healthcheck-agent --port 3307 --max-seconds-behind-master 300
+ExecStart=/usr/bin/mysql-slave-healthcheck-agent
 Restart=always
 User=root
 Group=root
