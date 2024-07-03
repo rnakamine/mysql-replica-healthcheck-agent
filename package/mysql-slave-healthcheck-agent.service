@@ -1,0 +1,12 @@
+[Unit]
+Description=MySQL slave healthcheck agent
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/mysql-slave-healthcheck-agent
+Restart=always
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

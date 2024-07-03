@@ -6,16 +6,18 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
 	"strconv"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var (
-	dsn string
-	Version = "0.0.2"
-	failSlaveNotRunning bool
+	dsn                    string
+	Version                = "0.0.2"
+	maxSecondsBehindMaster int
+	failSlaveNotRunning    bool
 )
 
 func main() {
@@ -24,7 +26,8 @@ func main() {
 	flag.IntVar(&port, "port", 5000, "http listen port number")
 	flag.StringVar(&dsn, "dsn", "root:@tcp(127.0.0.1:3306)/?charset=utf8", "MySQL DSN")
 	flag.BoolVar(&showVersion, "version", false, "show version")
-	flag.BoolVar(&failSlaveNotRunning, "fail-slave-not-ruuning", true, "returns 500 if the slave is not running");
+	flag.IntVar(&maxSecondsBehindMaster, "max-seconds-behind-master", 0, "max seconds behind master to consider the slave as running")
+	flag.BoolVar(&failSlaveNotRunning, "fail-slave-not-ruuning", true, "returns 500 if the slave is not running")
 	flag.Parse()
 	if showVersion {
 		fmt.Printf("version %s\n", Version)
@@ -87,6 +90,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if failSlaveNotRunning && slaveInfo["Seconds_Behind_Master"] == "" {
 		serverError(w, errors.New("Slave is not running."))
 		return
+	}
+
+	if failSlaveNotRunning && maxSecondsBehindMaster > 0 {
+		if slaveInfo["Seconds_Behind_Master"].(int) > int(maxSecondsBehindMaster) {
+			serverError(w, errors.New("Replication lag is too high"))
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

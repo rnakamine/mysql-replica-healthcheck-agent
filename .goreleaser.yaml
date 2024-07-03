@@ -1,0 +1,27 @@
+version: 2
+project_name: mysql-slave-healthcheck-agent
+builds:
+  - id: "mysql-slave-healthcheck-agent"
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
+    binary: mysql-slave-healthcheck-agent
+nfpms:
+  - id: mysql-slave-healthcheck-agent
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
+    maintainer: rnakamine <rnakamine8080@gmail.com>
+    builds:
+      - mysql-slave-healthcheck-agent
+    description: MySQL Slave Healthcheck Agent
+    formats:
+      - deb
+      - rpm
+    contents:
+      - src: package/mysql-slave-healthcheck-agent.service
+        dst: /etc/systemd/system/mysql-slave-healthcheck-agent.service
+        type: config
+    license: Apache-2.0
