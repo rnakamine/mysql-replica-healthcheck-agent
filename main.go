@@ -9,99 +9,123 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var (
-	dsn                    string
-	Version                = "0.0.2"
-	maxSecondsBehindMaster int
-	failSlaveNotRunning    bool
-)
+var Version string
 
 func main() {
-	var port int
-	var showVersion bool
-	flag.IntVar(&port, "port", 5000, "http listen port number")
-	flag.StringVar(&dsn, "dsn", "root:@tcp(127.0.0.1:3306)/?charset=utf8", "MySQL DSN")
+	var (
+		showVersion bool
+		configPath  string
+		port        int
+	)
 	flag.BoolVar(&showVersion, "version", false, "show version")
-	flag.IntVar(&maxSecondsBehindMaster, "max-seconds-behind-master", 0, "max seconds behind master to consider the slave as running")
-	flag.BoolVar(&failSlaveNotRunning, "fail-slave-not-ruuning", true, "returns 500 if the slave is not running")
+	flag.IntVar(&port, "port", 5000, "listen port number")
+	flag.StringVar(&configPath, "config", "/etc/mysql-slave-healthcheck-agent/replicas.conf", "config file path")
 	flag.Parse()
+
 	if showVersion {
 		fmt.Printf("version %s\n", Version)
 		return
 	}
 
-	log.Printf("Listing port %d", port)
-	log.Printf("dsn %s", dsn)
+	config, err := newConfig(configPath)
+	if err != nil {
+		log.Fatalf("Failed to read config: %v", err)
+	}
 
-	http.HandleFunc("/", handler)
+	log.Printf("Listening on port %d", port)
+
+	for name, replicaConfig := range *config {
+		http.HandleFunc("/"+name, handlerFunc(&replicaConfig))
+	}
+
 	addr := fmt.Sprintf(":%d", port)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	srv := &http.Server{
+		Addr:        addr,
+		Handler:     http.DefaultServeMux,
+		ReadTimeout: 10 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", dsn)
-	defer db.Close()
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	rows, err := db.Query("SHOW SLAVE STATUS")
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	if !rows.Next() {
-		serverError(w, errors.New("No slave status"))
-		return
-	}
-	defer rows.Close()
-
-	// カラム数と同じ要素数のsliceを用意して sql.RawBytes のポインタで初期化しておく
-	columns, _ := rows.Columns()
-	values := make([]interface{}, len(columns))
-	for i, _ := range values {
-		var v sql.RawBytes
-		values[i] = &v
-	}
-
-	err = rows.Scan(values...)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	// 結果を返す用のmapに値を詰める
-	slaveInfo := make(map[string]interface{})
-	for i, name := range columns {
-		bp := values[i].(*sql.RawBytes)
-		vs := string(*bp)
-		vi, err := strconv.ParseInt(vs, 10, 64)
+func handlerFunc(config *ReplicaConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.User, config.Password, config.Host, config.Port)
+		db, err := sql.Open("mysql", dsn)
 		if err != nil {
-			slaveInfo[name] = vs
-		} else {
-			slaveInfo[name] = vi
+			serverError(w, err)
+			return
 		}
-	}
-	if failSlaveNotRunning && slaveInfo["Seconds_Behind_Master"] == "" {
-		serverError(w, errors.New("Slave is not running."))
-		return
-	}
+		defer db.Close()
+		slaveInfo, err := innerHandler(config, db)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
 
-	if failSlaveNotRunning && maxSecondsBehindMaster > 0 {
-		if slaveInfo["Seconds_Behind_Master"].(int) > int(maxSecondsBehindMaster) {
-			serverError(w, errors.New("Replication lag is too high"))
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		if err := encoder.Encode(slaveInfo); err != nil {
+			serverError(w, err)
 			return
 		}
 	}
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	encoder := json.NewEncoder(w)
-	encoder.Encode(slaveInfo)
+func innerHandler(config *ReplicaConfig, db *sql.DB) (map[string]interface{}, error) {
+	rows, err := db.Query("SHOW SLAVE STATUS")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil, errors.New("no slave status")
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	err = rows.Scan(scanArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	slaveInfo := make(map[string]interface{})
+	for i, col := range columns {
+		val := string(values[i])
+		vi, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			slaveInfo[col] = val
+		} else {
+			slaveInfo[col] = vi
+		}
+	}
+
+	secondsBehindMaster, ok := slaveInfo["Seconds_Behind_Master"].(int64)
+	if config.FailSlaveNotRunning && !ok {
+		return nil, errors.New("slave is not running")
+	}
+
+	if ok && config.MaxSecondsBehindMaster > 0 {
+		if secondsBehindMaster > int64(config.MaxSecondsBehindMaster) {
+			return nil, errors.New("replication lag is too high")
+		}
+	}
+
+	return slaveInfo, nil
 }
 
 func serverError(w http.ResponseWriter, err error) {

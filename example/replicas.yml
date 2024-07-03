@@ -1,0 +1,14 @@
+---
+replica1:
+  host: 127.0.0.1
+  port: 3307
+  user: root
+  password: rootpassword
+  max-seconds-behind-master: 300
+
+replica2:
+  host: 127.0.0.1
+  port: 3307
+  user: root
+  password: rootpassword
+  max-seconds-behind-master: 300
