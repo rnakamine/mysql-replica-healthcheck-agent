@@ -26,7 +26,7 @@ func main() {
 	flag.IntVar(&port, "port", 5000, "http listen port number")
 	flag.StringVar(&dsn, "dsn", "root:@tcp(127.0.0.1:3306)/?charset=utf8", "MySQL DSN")
 	flag.BoolVar(&showVersion, "version", false, "show version")
-	flag.IntVar(&maxSecondsBehindMaster, "-max-seconds-behind-master", 0, "max seconds behind master to consider the slave as running")
+	flag.IntVar(&maxSecondsBehindMaster, "max-seconds-behind-master", 0, "max seconds behind master to consider the slave as running")
 	flag.BoolVar(&failSlaveNotRunning, "fail-slave-not-ruuning", true, "returns 500 if the slave is not running")
 	flag.Parse()
 	if showVersion {
