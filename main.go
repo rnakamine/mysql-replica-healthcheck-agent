@@ -12,6 +12,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rnakamine/mysql-replica-healthcheck-agent/config"
 )
 
 var Version string
@@ -32,7 +33,7 @@ func main() {
 		return
 	}
 
-	config, err := newConfig(configPath)
+	config, err := config.New(configPath)
 	if err != nil {
 		log.Fatalf("Failed to read config: %v", err)
 	}
@@ -52,7 +53,7 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-func handlerFunc(config *ReplicaConfig) http.HandlerFunc {
+func handlerFunc(config *config.ReplicaConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.User, config.Password, config.Host, config.Port)
 		db, err := sql.Open("mysql", dsn)
@@ -76,7 +77,7 @@ func handlerFunc(config *ReplicaConfig) http.HandlerFunc {
 	}
 }
 
-func innerHandler(config *ReplicaConfig, db *sql.DB) (map[string]interface{}, error) {
+func innerHandler(config *config.ReplicaConfig, db *sql.DB) (map[string]interface{}, error) {
 	rows, err := db.Query("SHOW REPLICA STATUS")
 	if err != nil {
 		return nil, err

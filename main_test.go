@@ -6,19 +6,20 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/rnakamine/mysql-replica-healthcheck-agent/config"
 )
 
 func TestInnerHandler(t *testing.T) {
 	tests := []struct {
 		name      string
-		config    ReplicaConfig
+		config    config.ReplicaConfig
 		mockSetup func(mock sqlmock.Sqlmock)
 		want      map[string]interface{}
 		wantErr   bool
 	}{
 		{
 			name: "replica status available with no errors",
-			config: ReplicaConfig{
+			config: config.ReplicaConfig{
 				FailReplicaNotRunning:  false,
 				MaxSecondsBehindSource: 10,
 			},
@@ -35,7 +36,7 @@ func TestInnerHandler(t *testing.T) {
 		},
 		{
 			name: "replica is not running with no replica status",
-			config: ReplicaConfig{
+			config: config.ReplicaConfig{
 				FailReplicaNotRunning:  true,
 				MaxSecondsBehindSource: 10,
 			},
@@ -49,7 +50,7 @@ func TestInnerHandler(t *testing.T) {
 		},
 		{
 			name: "replica is up and running with replication lag too high",
-			config: ReplicaConfig{
+			config: config.ReplicaConfig{
 				FailReplicaNotRunning:  true,
 				MaxSecondsBehindSource: 10,
 			},
