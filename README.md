@@ -55,6 +55,8 @@ $ curl localhost:5000/replica2 | jq .
 The configuration file is a YAML file that defines multiple replica configurations. Example:
 
 ```yaml
+# /etc/mysql-replica-healthcheck-agent/replicas.yml
+---
 replica1:
   host: 127.0.0.1
   port: 3307
