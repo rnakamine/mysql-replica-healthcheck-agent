@@ -45,6 +45,7 @@ $ curl localhost:5000/replica2 | jq .
 
 - The query "SHOW REPLICA STATUS" was successful, returning HTTP status 200 and JSON.
 - If the agent could not connect to MySQL or if MySQL is not a replica, it returns HTTP status 500.
+- If Seconds_Behind_Source exceeds the specified max-seconds-behind-source, it returns HTTP status 500. This allows monitoring of replica lag.
 
 ## Options
 
