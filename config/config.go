@@ -12,7 +12,7 @@ type ReplicaConfig struct {
 	User                   string `yaml:"user"`
 	Password               string `yaml:"password"`
 	MaxSecondsBehindSource int    `yaml:"max-seconds-behind-source"`
-	FailReplicaNotRunning  bool   `yaml:"fail-slave-not-running"`
+	FailReplicaNotRunning  bool   `yaml:"fail-replica-not-running"`
 }
 
 type Configs map[string]ReplicaConfig

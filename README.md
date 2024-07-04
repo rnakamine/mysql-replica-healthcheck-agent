@@ -49,7 +49,7 @@ $ curl localhost:5000/replica2 | jq .
 ## Options
 
 - `--port` : HTTP listen port number. Default is 5000.
-- `--config` : Path to the configuration file. Default is "/etc/mysql-slave-healthcheck-agent/replicas.yml".
+- `--config` : Path to the configuration file. Default is "/etc/mysql-replica-healthcheck-agent/replicas.yml".
 
 The configuration file is a YAML file that defines multiple replica configurations. Example:
 
@@ -60,7 +60,7 @@ replica1:
   user: root
   password: rootpassword
   max-seconds-behind-source: 300
-  fail-slave-not-running: true
+  fail-replica-not-running: true
 
 replica2:
   host: 127.0.0.1
@@ -68,7 +68,7 @@ replica2:
   user: root
   password: rootpassword
   max-seconds-behind-source: 300
-  fail-slave-not-running: true
+  fail-replica-not-running: true
 ```
 
 If the replica is not running, it returns HTTP status 500. When the option `fail-replica-not-running: false` is specified, it returns 200.

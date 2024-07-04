@@ -25,7 +25,7 @@ func main() {
 	)
 	flag.BoolVar(&showVersion, "version", false, "show version")
 	flag.IntVar(&port, "port", 5000, "listen port number")
-	flag.StringVar(&configPath, "config", "/etc/mysql-slave-healthcheck-agent/replicas.conf", "config file path")
+	flag.StringVar(&configPath, "config", "/etc/mysql-replica-healthcheck-agent/replicas.yml", "config file path")
 	flag.Parse()
 
 	if showVersion {
@@ -62,7 +62,7 @@ func handlerFunc(config *config.ReplicaConfig) http.HandlerFunc {
 			return
 		}
 		defer db.Close()
-		slaveInfo, err := innerHandler(config, db)
+		replicaInfo, err := innerHandler(config, db)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -70,7 +70,7 @@ func handlerFunc(config *config.ReplicaConfig) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
-		if err := encoder.Encode(slaveInfo); err != nil {
+		if err := encoder.Encode(replicaInfo); err != nil {
 			serverError(w, err)
 			return
 		}
@@ -85,7 +85,7 @@ func innerHandler(config *config.ReplicaConfig, db *sql.DB) (map[string]interfac
 	defer rows.Close()
 
 	if !rows.Next() {
-		return nil, errors.New("no slave status")
+		return nil, errors.New("no replica status")
 	}
 
 	columns, err := rows.Columns()
@@ -104,20 +104,20 @@ func innerHandler(config *config.ReplicaConfig, db *sql.DB) (map[string]interfac
 		return nil, err
 	}
 
-	slaveInfo := make(map[string]interface{})
-	for i, col := range columns {
-		val := string(values[i])
-		vi, err := strconv.ParseInt(val, 10, 64)
+	replicaInfo := make(map[string]interface{})
+	for i, name := range columns {
+		vs := string(values[i])
+		vi, err := strconv.ParseInt(vs, 10, 64)
 		if err != nil {
-			slaveInfo[col] = val
+			replicaInfo[name] = vs
 		} else {
-			slaveInfo[col] = vi
+			replicaInfo[name] = vi
 		}
 	}
 
-	secondsBehindSource, ok := slaveInfo["Seconds_Behind_Source"].(int64)
+	secondsBehindSource, ok := replicaInfo["Seconds_Behind_Source"].(int64)
 	if config.FailReplicaNotRunning && !ok {
-		return nil, errors.New("slave is not running")
+		return nil, errors.New("replica is not running")
 	}
 
 	if ok && config.MaxSecondsBehindSource > 0 {
@@ -126,7 +126,7 @@ func innerHandler(config *config.ReplicaConfig, db *sql.DB) (map[string]interfac
 		}
 	}
 
-	return slaveInfo, nil
+	return replicaInfo, nil
 }
 
 func serverError(w http.ResponseWriter, err error) {
