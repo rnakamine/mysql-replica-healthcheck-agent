@@ -1,9 +1,9 @@
 [Unit]
-Description=MySQL slave healthcheck agent
+Description=MySQL replica healthcheck agent
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/mysql-slave-healthcheck-agent
+ExecStart=/usr/bin/mysql-replica-healthcheck-agent
 Restart=always
 User=root
 Group=root

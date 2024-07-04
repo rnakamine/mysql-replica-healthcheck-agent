@@ -1,7 +1,7 @@
 version: 2
-project_name: mysql-slave-healthcheck-agent
+project_name: mysql-replica-healthcheck-agent
 builds:
-  - id: "mysql-slave-healthcheck-agent"
+  - id: "mysql-replica-healthcheck-agent"
     goos:
       - linux
     goarch:
@@ -9,19 +9,26 @@ builds:
       - arm64
     ldflags:
       - -s -w -X main.Version={{.Version}}
-    binary: mysql-slave-healthcheck-agent
+    binary: mysql-replica-healthcheck-agent
 nfpms:
-  - id: mysql-slave-healthcheck-agent
+  - id: mysql-replica-healthcheck-agent
     file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
     maintainer: rnakamine <rnakamine8080@gmail.com>
     builds:
-      - mysql-slave-healthcheck-agent
-    description: MySQL Slave Healthcheck Agent
+      - mysql-replica-healthcheck-agent
+    description: MySQL replica Healthcheck Agent
     formats:
       - deb
       - rpm
     contents:
-      - src: package/mysql-slave-healthcheck-agent.service
-        dst: /etc/systemd/system/mysql-slave-healthcheck-agent.service
+      - src: package/mysql-replica-healthcheck-agent.service
+        dst: /etc/systemd/system/mysql-replica-healthcheck-agent.service
+        type: config
+      - dst: /etc/mysql-replica-healthcheck-agent
+        type: dir
+        file_info:
+          mode: 0700
+      - src: example/replicas.yml
+        dst: /etc/mysql-replica-healthcheck-agent/replicas.yml
         type: config
     license: Apache-2.0
