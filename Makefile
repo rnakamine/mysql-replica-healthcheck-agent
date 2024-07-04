@@ -20,4 +20,7 @@ release_deps:
 prerelease: release_deps
 	goreleaser --clean
 
+build:
+	go build -ldflags="$(BUILD_LDFLAGS)" -o mysql-replica-healthcheck-agent
+
 .PHONY: test depsdev lint
