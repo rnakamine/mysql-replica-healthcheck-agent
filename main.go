@@ -58,22 +58,24 @@ func handlerFunc(config *config.ReplicaConfig) http.HandlerFunc {
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.User, config.Password, config.Host, config.Port)
 		db, err := sql.Open("mysql", dsn)
 		if err != nil {
-			serverError(w, err)
+			serverError(w, r, err)
 			return
 		}
 		defer db.Close()
 		replicaInfo, err := innerHandler(config, db)
 		if err != nil {
-			serverError(w, err)
+			serverError(w, r, err)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
 		if err := encoder.Encode(replicaInfo); err != nil {
-			serverError(w, err)
+			serverError(w, r, err)
 			return
 		}
+
+		log.Printf("%s %s 200", r.Method, r.URL.Path)
 	}
 }
 
@@ -129,8 +131,8 @@ func innerHandler(config *config.ReplicaConfig, db *sql.DB) (map[string]interfac
 	return replicaInfo, nil
 }
 
-func serverError(w http.ResponseWriter, err error) {
-	log.Printf("error: %s", err)
+func serverError(w http.ResponseWriter, r *http.Request, err error) {
+	log.Printf("%s %s 500 - Error: %s", r.Method, r.URL.Path, err)
 	code := http.StatusInternalServerError
 	http.Error(w, fmt.Sprintf("%s", err), code)
 }
