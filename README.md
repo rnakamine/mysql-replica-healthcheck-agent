@@ -73,7 +73,7 @@ replica2:
   port: 3308
   user: root
   password: rootpassword
-  max-seconds-behind-soruce: 300
+  max-seconds-behind-source: 300
   fail-replica-not-running: true
   healthcheckConfig:
     port: 5001
