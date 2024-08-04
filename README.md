@@ -8,12 +8,13 @@ This is useful for HAProxy's health check access instead of `option mysql-check`
 
 ```
 $ mysql-replica-healthcheck-agent
-2014/05/21 00:04:28 Listing port 5000
+2024/08/04 17:09:42 Starting healthchecker for replica1 on port 5000
+2024/08/04 17:09:42 Starting healthchecker for replica2 on port 5001
 ```
 
 ```
 # Check the status of replica1
-$ curl localhost:5000/replica1 | jq .
+$ curl localhost:5000/ | jq .
 {
   "Connect_Retry": 60,
   "Exec_Source_Log_Pos": 1048,
@@ -28,7 +29,7 @@ $ curl localhost:5000/replica1 | jq .
 }
 
 # Check the status of replica2
-$ curl localhost:5000/replica2 | jq .
+$ curl localhost:5001/ | jq .
 {
   "Connect_Retry": 60,
   "Exec_Source_Log_Pos": 1048,
@@ -49,7 +50,6 @@ $ curl localhost:5000/replica2 | jq .
 
 ## Options
 
-- `--port` : HTTP listen port number. Default is 5000.
 - `--config` : Path to the configuration file. Default is "/etc/mysql-replica-healthcheck-agent/replicas.yml".
 
 The configuration file is a YAML file that defines multiple replica configurations. Example:
@@ -64,6 +64,9 @@ replica1:
   password: rootpassword
   max-seconds-behind-source: 300
   fail-replica-not-running: true
+  healthcheckConfig:
+    port: 5000
+    path: /
 
 replica2:
   host: 127.0.0.1
@@ -72,7 +75,12 @@ replica2:
   password: rootpassword
   max-seconds-behind-source: 300
   fail-replica-not-running: true
+  healthcheckConfig:
+    port: 5001
+    path: /
 ```
+
+Start a separate health checker for each replica.
 
 If the replica is not running, it returns HTTP status 500. When the option `fail-replica-not-running: false` is specified, it returns 200.
 
