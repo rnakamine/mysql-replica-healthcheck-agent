@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -8,11 +9,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rnakamine/mysql-replica-healthcheck-agent/config"
+	"golang.org/x/sync/errgroup"
 )
 
 var Version string
@@ -21,10 +26,8 @@ func main() {
 	var (
 		showVersion bool
 		configPath  string
-		port        int
 	)
 	flag.BoolVar(&showVersion, "version", false, "show version")
-	flag.IntVar(&port, "port", 5000, "listen port number")
 	flag.StringVar(&configPath, "config", "/etc/mysql-replica-healthcheck-agent/replicas.yml", "config file path")
 	flag.Parse()
 
@@ -35,25 +38,61 @@ func main() {
 
 	config, err := config.New(configPath)
 	if err != nil {
-		log.Fatalf("Failed to read config: %v", err)
+		log.Fatalf("failed to read config: %v", err)
 	}
 
-	log.Printf("Listening on port %d", port)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	g, ctx := errgroup.WithContext(ctx)
 
+	servers := make([]*http.Server, 0, len(*config))
 	for name, replicaConfig := range *config {
-		http.HandleFunc("/"+name, handlerFunc(&replicaConfig))
+		srv := createHealthChecker(name, replicaConfig)
+		servers = append(servers, srv)
+		g.Go(func() error {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				return fmt.Errorf("server %s failed: %w", name, err)
+			}
+			return nil
+		})
 	}
 
-	addr := fmt.Sprintf(":%d", port)
-	srv := &http.Server{
-		Addr:        addr,
-		Handler:     http.DefaultServeMux,
-		ReadTimeout: 10 * time.Second,
+	<-ctx.Done()
+	for _, srv := range servers {
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Fatalf("failed to shutdown server: %v", err)
+		}
 	}
-	log.Fatal(srv.ListenAndServe())
+
+	if err := g.Wait(); err != nil {
+		log.Fatalf("failed to start server: %v", err)
+	}
 }
 
-func handlerFunc(config *config.ReplicaConfig) http.HandlerFunc {
+func createHealthChecker(name string, config config.ReplicaConfig) *http.Server {
+	port := config.HealthcheckConfig.Port
+	if port == 0 {
+		log.Fatalf("port not specified for %s", name)
+	}
+
+	path := config.HealthcheckConfig.Path
+	if path == "" {
+		path = "/"
+	}
+
+	log.Printf("creating healthchecker for %s on port %d", name, port)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc(path, handlerFunc(name, &config))
+	addr := fmt.Sprintf(":%d", port)
+	return &http.Server{
+		Addr:        addr,
+		Handler:     mux,
+		ReadTimeout: 10 * time.Second,
+	}
+}
+
+func handlerFunc(name string, config *config.ReplicaConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.User, config.Password, config.Host, config.Port)
 		db, err := sql.Open("mysql", dsn)
@@ -75,7 +114,7 @@ func handlerFunc(config *config.ReplicaConfig) http.HandlerFunc {
 			return
 		}
 
-		log.Printf("%s %s 200", r.Method, r.URL.Path)
+		log.Printf("[%s] %s %s 200", name, r.Method, r.URL.Path)
 	}
 }
 

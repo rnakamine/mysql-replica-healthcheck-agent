@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-sql-driver/mysql v1.8.1
+	golang.org/x/sync v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

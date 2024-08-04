@@ -7,12 +7,18 @@ import (
 )
 
 type ReplicaConfig struct {
-	Host                   string `yaml:"host"`
-	Port                   int    `yaml:"port"`
-	User                   string `yaml:"user"`
-	Password               string `yaml:"password"`
-	MaxSecondsBehindSource int    `yaml:"max-seconds-behind-source"`
-	FailReplicaNotRunning  bool   `yaml:"fail-replica-not-running"`
+	Host                   string            `yaml:"host"`
+	Port                   int               `yaml:"port"`
+	User                   string            `yaml:"user"`
+	Password               string            `yaml:"password"`
+	MaxSecondsBehindSource int               `yaml:"max-seconds-behind-source"`
+	FailReplicaNotRunning  bool              `yaml:"fail-replica-not-running"`
+	HealthcheckConfig      HealthcheckConfig `yaml:"healthcheckConfig"`
+}
+
+type HealthcheckConfig struct {
+	Path string `yaml:"path"`
+	Port int    `yaml:"port"`
 }
 
 type Configs map[string]ReplicaConfig
