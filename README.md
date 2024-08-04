@@ -78,7 +78,6 @@ replica2:
   healthcheckConfig:
     port: 5001
     path: /
-
 ```
 
 Start a separate health checker for each replica.
