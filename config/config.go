@@ -11,9 +11,9 @@ type ReplicaConfig struct {
 	Port                   int               `yaml:"port"`
 	User                   string            `yaml:"user"`
 	Password               string            `yaml:"password"`
-	MaxSecondsBehindSource int               `yaml:"max-seconds-behind-source"`
-	FailReplicaNotRunning  bool              `yaml:"fail-replica-not-running"`
-	HealthcheckConfig      HealthcheckConfig `yaml:"healthcheckConfig"`
+	MaxSecondsBehindSource int               `yaml:"max_seconds_behind_source"`
+	FailReplicaNotRunning  bool              `yaml:"fail_replica_not_running"`
+	HealthcheckConfig      HealthcheckConfig `yaml:"healthcheck_config"`
 }
 
 type HealthcheckConfig struct {

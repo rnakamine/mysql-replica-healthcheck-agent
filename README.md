@@ -46,7 +46,7 @@ $ curl localhost:5001/ | jq .
 
 - The query "SHOW REPLICA STATUS" was successful, returning HTTP status 200 and JSON.
 - If the agent could not connect to MySQL or if MySQL is not a replica, it returns HTTP status 500.
-- If Seconds_Behind_Source exceeds the specified max-seconds-behind-source, it returns HTTP status 500. This allows monitoring of replica lag.
+- If Seconds_Behind_Source exceeds the specified max_seconds_behind_source, it returns HTTP status 500. This allows monitoring of replica lag.
 
 ## Options
 
@@ -62,9 +62,9 @@ replica1:
   port: 3307
   user: root
   password: rootpassword
-  max-seconds-behind-source: 300
-  fail-replica-not-running: true
-  healthcheckConfig:
+  max_seconds_behind_source: 300
+  fail_replica_not_running: true
+  healthcheck_config:
     port: 5000
     path: /
 
@@ -73,16 +73,16 @@ replica2:
   port: 3308
   user: root
   password: rootpassword
-  max-seconds-behind-source: 300
-  fail-replica-not-running: true
-  healthcheckConfig:
+  max_seconds_behind_source: 300
+  fail_replica_not_running: true
+  healthcheck_config:
     port: 5001
     path: /
 ```
 
 Start a separate health checker for each replica.
 
-If the replica is not running, it returns HTTP status 500. When the option `fail-replica-not-running: false` is specified, it returns 200.
+If the replica is not running, it returns HTTP status 500. When the option `fail_replica_not_running: false` is specified, it returns 200.
 
 ## License
 
