@@ -4,9 +4,9 @@ replica1:
   port: 3307
   user: root
   password: rootpassword
-  max-seconds-behind-source: 300
-  fail-replica-not-running: true
-  healthcheckConfig:
+  max_seconds_behind_source: 300
+  fail_replica_not_running: true
+  healthcheck_config:
     port: 5000
     path: /
 
@@ -15,8 +15,8 @@ replica2:
   port: 3308
   user: root
   password: rootpassword
-  max-seconds-behind-source: 300
-  fail-replica-not-running: true
-  healthcheckConfig:
+  max_seconds_behind_source: 300
+  fail_replica_not_running: true
+  healthcheck_config:
     port: 5001
     path: /
