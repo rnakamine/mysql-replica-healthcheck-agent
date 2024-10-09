@@ -9,7 +9,7 @@ import (
 	"github.com/rnakamine/mysql-replica-healthcheck-agent/config"
 )
 
-func TestInnerHandler(t *testing.T) {
+func TestFetchReplicaStatus(t *testing.T) {
 	tests := []struct {
 		name      string
 		config    config.ReplicaConfig
@@ -75,7 +75,7 @@ func TestInnerHandler(t *testing.T) {
 
 			tt.mockSetup(mock)
 
-			got, err := innerHandler(&tt.config, db)
+			got, err := fetchReplicaStatus(&tt.config, db)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("innerHandler() error = %v, wantErr %v", err, tt.wantErr)
 				return

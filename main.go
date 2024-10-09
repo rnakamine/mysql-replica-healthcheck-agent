@@ -101,7 +101,7 @@ func handlerFunc(name string, config *config.ReplicaConfig) http.HandlerFunc {
 			return
 		}
 		defer db.Close()
-		replicaInfo, err := innerHandler(config, db)
+		replicaInfo, err := fetchReplicaStatus(config, db)
 		if err != nil {
 			serverError(w, r, err)
 			return
@@ -118,7 +118,7 @@ func handlerFunc(name string, config *config.ReplicaConfig) http.HandlerFunc {
 	}
 }
 
-func innerHandler(config *config.ReplicaConfig, db *sql.DB) (map[string]interface{}, error) {
+func fetchReplicaStatus(config *config.ReplicaConfig, db *sql.DB) (map[string]interface{}, error) {
 	rows, err := db.Query("SHOW REPLICA STATUS")
 	if err != nil {
 		return nil, err
